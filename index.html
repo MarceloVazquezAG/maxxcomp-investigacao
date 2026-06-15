@@ -1,0 +1,1292 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maxxcomp Investigation Board</title>
+  <meta name="description" content="Dossie interativo OSINT do CNPJ 08.247.122/0001-99.">
+  <style>
+    :root{
+      --ink:#12100d;
+      --paper:#f1e5c8;
+      --paper-2:#d7c196;
+      --folder:#a98552;
+      --folder-dark:#6e4d2f;
+      --blue:#193a70;
+      --blue-2:#275fa3;
+      --red:#c84d32;
+      --tape:#111217;
+      --steel:#6d747b;
+      --green:#48b77b;
+      --amber:#d9a245;
+      --low:#84807a;
+      --line:rgba(39,31,21,.28);
+      --shadow:0 24px 60px rgba(0,0,0,.34);
+    }
+
+    *{box-sizing:border-box}
+    html{min-height:100%;background:#262a25}
+    body{
+      min-height:100vh;
+      margin:0;
+      color:var(--ink);
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 22% 18%, rgba(255,255,255,.12), transparent 18rem),
+        radial-gradient(circle at 84% 76%, rgba(0,0,0,.22), transparent 24rem),
+        linear-gradient(135deg,#4b534c,#242720 48%,#191a16);
+      overflow-x:hidden;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:.32;
+      background-image:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size:4px 4px, 5px 5px;
+      mix-blend-mode:overlay;
+    }
+
+    .stage{
+      width:min(1180px, calc(100vw - 28px));
+      min-height:calc(100vh - 28px);
+      margin:14px auto;
+      position:relative;
+      padding:18px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:18px;
+      background:
+        linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.02)),
+        radial-gradient(circle at 52% 44%, rgba(255,244,212,.12), transparent 30rem);
+      box-shadow:0 30px 90px rgba(0,0,0,.42);
+      overflow:hidden;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      gap:16px;
+      align-items:flex-start;
+      padding:6px 4px 14px;
+      color:#f2ead8;
+    }
+
+    .brand{
+      display:grid;
+      gap:4px;
+    }
+
+    .case-tag{
+      display:inline-flex;
+      width:max-content;
+      align-items:center;
+      gap:8px;
+      padding:5px 10px;
+      border:1px solid rgba(230,205,138,.5);
+      color:#e6cd8a;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      background:rgba(20,16,12,.32);
+    }
+
+    h1{
+      margin:0;
+      font-family:Georgia, "Times New Roman", serif;
+      font-size:clamp(28px, 4vw, 52px);
+      line-height:1;
+      font-weight:800;
+      color:#fff2d3;
+      text-shadow:0 3px 20px rgba(0,0,0,.42);
+    }
+
+    .case-meta{
+      margin:0;
+      color:rgba(255,242,211,.72);
+      font-size:13px;
+      max-width:720px;
+    }
+
+    .status-strip{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      justify-content:flex-end;
+      min-width:260px;
+    }
+
+    .chip{
+      min-height:30px;
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      padding:6px 9px;
+      border-radius:4px;
+      border:1px solid rgba(255,255,255,.18);
+      color:#f7ead1;
+      background:rgba(17,17,19,.42);
+      font-size:12px;
+      font-weight:750;
+      text-transform:uppercase;
+    }
+
+    .chip.ok{border-color:rgba(72,183,123,.7);color:#aaf0c6}
+    .chip.warn{border-color:rgba(217,162,69,.78);color:#ffd991}
+    .chip.dot::before{
+      content:"";
+      width:7px;
+      height:7px;
+      border-radius:50%;
+      background:currentColor;
+      box-shadow:0 0 16px currentColor;
+    }
+
+    .desk{
+      position:relative;
+      min-height:720px;
+      border-radius:14px;
+      padding:18px;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,.08), transparent 16rem),
+        radial-gradient(circle at 74% 40%, rgba(0,0,0,.14), transparent 22rem),
+        linear-gradient(135deg,#333935,#20221e);
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:inset 0 0 90px rgba(0,0,0,.32);
+      overflow:hidden;
+    }
+
+    .tabs{
+      position:relative;
+      z-index:20;
+      display:grid;
+      grid-template-columns:repeat(5, minmax(120px,1fr));
+      gap:10px;
+      margin-bottom:16px;
+    }
+
+    .tab{
+      appearance:none;
+      border:1px solid rgba(238,217,169,.36);
+      background:linear-gradient(#d0b37a,#987043);
+      color:#20160d;
+      border-radius:7px 7px 3px 3px;
+      padding:10px 9px;
+      font-weight:900;
+      font-size:12px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      box-shadow:0 10px 22px rgba(0,0,0,.22);
+      cursor:pointer;
+      transition:transform .18s ease, filter .18s ease, box-shadow .18s ease;
+    }
+
+    .tab:hover{transform:translateY(-2px);filter:saturate(1.08)}
+    .tab.active{
+      background:linear-gradient(#f2e2b8,#cfa764);
+      box-shadow:0 14px 30px rgba(0,0,0,.34), inset 0 -4px 0 rgba(73,48,22,.22);
+    }
+
+    .view{
+      display:none;
+      min-height:610px;
+      animation:caseIn .48s cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    .view.active{display:block}
+
+    @keyframes caseIn{
+      from{opacity:0;transform:translateY(18px) scale(.985)}
+      to{opacity:1;transform:translateY(0) scale(1)}
+    }
+
+    .board-grid{
+      display:grid;
+      grid-template-columns:minmax(320px, 1.08fr) minmax(340px, .92fr);
+      gap:22px;
+      align-items:stretch;
+    }
+
+    .stack{
+      position:relative;
+      min-height:560px;
+    }
+
+    .case-folder{
+      position:absolute;
+      inset:46px 26px 30px 6px;
+      border-radius:8px 8px 10px 10px;
+      background:linear-gradient(145deg,#b38a52,#76502f 80%);
+      box-shadow:var(--shadow);
+      transform:rotate(-4deg);
+    }
+
+    .case-folder::before{
+      content:"";
+      position:absolute;
+      left:20px;
+      top:-30px;
+      width:190px;
+      height:58px;
+      border-radius:10px 18px 0 0;
+      background:linear-gradient(145deg,#c59b63,#8d6136);
+    }
+
+    .paper{
+      position:absolute;
+      background:linear-gradient(160deg,#fff8e9,#d7caa9);
+      border:1px solid rgba(41,35,28,.25);
+      box-shadow:0 18px 36px rgba(0,0,0,.22);
+      color:#21304a;
+    }
+
+    .paper.identity{
+      left:54px;
+      top:30px;
+      width:min(430px, 82%);
+      min-height:470px;
+      padding:26px 28px;
+      transform:rotate(-1.6deg);
+    }
+
+    .paper.identity::before,
+    .paper.identity::after{
+      content:"";
+      position:absolute;
+      top:14px;
+      width:11px;
+      height:11px;
+      border-radius:50%;
+      background:#c9bd9c;
+      box-shadow:inset 0 2px 4px rgba(0,0,0,.24);
+    }
+    .paper.identity::before{left:26px}
+    .paper.identity::after{right:26px}
+
+    .stamp{
+      display:inline-flex;
+      border:3px solid rgba(28,65,129,.8);
+      color:#1b468c;
+      transform:rotate(-7deg);
+      padding:6px 10px;
+      font-size:13px;
+      font-weight:900;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      margin:8px 0 16px;
+    }
+
+    .paper h2,.panel h2,.recorder-card h2,.clipboard h2,.envelope h2{
+      margin:0 0 12px;
+      font-family:Georgia, "Times New Roman", serif;
+      font-size:24px;
+      color:#1b1b17;
+      letter-spacing:0;
+      text-transform:none;
+    }
+
+    .paper p,.paper li,.panel p,.panel li{
+      font-size:14px;
+      margin:0;
+    }
+
+    .identity-list{
+      list-style:none;
+      padding:0;
+      margin:16px 0 0;
+      display:grid;
+      gap:10px;
+    }
+
+    .identity-list li{
+      display:grid;
+      grid-template-columns:120px 1fr;
+      gap:10px;
+      border-bottom:1px solid rgba(38,43,67,.18);
+      padding-bottom:8px;
+    }
+
+    .identity-list span:first-child{
+      color:#746653;
+      font-size:11px;
+      font-weight:900;
+      text-transform:uppercase;
+    }
+
+    .cassette{
+      position:relative;
+      margin:54px auto 18px;
+      width:min(440px,100%);
+      aspect-ratio:1.48;
+      border-radius:12px;
+      background:
+        radial-gradient(circle at 22% 34%, #0c0d10 0 8px, transparent 9px),
+        radial-gradient(circle at 78% 34%, #0c0d10 0 8px, transparent 9px),
+        linear-gradient(90deg,#101216,#20232b 48%,#121319);
+      box-shadow:var(--shadow), inset 0 0 0 2px rgba(255,255,255,.05);
+      border:1px solid #050608;
+      overflow:hidden;
+      transform:rotate(1deg);
+    }
+
+    .cassette::before{
+      content:"";
+      position:absolute;
+      left:0;
+      right:0;
+      top:42%;
+      height:54px;
+      background:linear-gradient(90deg,#e25835,#f07c3c,#e05732);
+      box-shadow:0 5px 20px rgba(0,0,0,.3);
+    }
+
+    .cassette-title{
+      position:absolute;
+      left:50%;
+      top:44%;
+      transform:translate(-50%,-50%) rotate(-2deg);
+      z-index:2;
+      width:80%;
+      color:#1f130d;
+      font-family:Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size:clamp(26px,4vw,48px);
+      line-height:.83;
+      text-transform:uppercase;
+      text-align:center;
+      text-shadow:0 1px 0 rgba(255,255,255,.32);
+    }
+
+    .reel{
+      position:absolute;
+      top:60%;
+      width:78px;
+      height:78px;
+      border-radius:50%;
+      background:
+        radial-gradient(circle,#f6e0b0 0 8px,#0d0f12 9px 15px,transparent 16px),
+        repeating-conic-gradient(from 0deg,#b55a34 0 10deg,#121318 10deg 22deg);
+      border:5px solid #15171c;
+      animation:spin 2.8s linear infinite;
+    }
+    .reel.left{left:25%}
+    .reel.right{right:25%;animation-direction:reverse}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .side-panel{
+      display:grid;
+      gap:14px;
+      align-content:start;
+    }
+
+    .panel{
+      background:linear-gradient(160deg,rgba(247,231,194,.96),rgba(196,169,112,.96));
+      border:1px solid rgba(48,34,18,.28);
+      border-radius:8px;
+      padding:18px;
+      box-shadow:0 18px 40px rgba(0,0,0,.28);
+      position:relative;
+    }
+
+    .panel.dark{
+      background:linear-gradient(160deg,#1a1b20,#0f1014);
+      color:#f5ead6;
+      border-color:rgba(255,255,255,.12);
+    }
+
+    .panel.dark h2{color:#f5ead6}
+
+    .metric-row{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .metric{
+      border-radius:6px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.18);
+      padding:10px;
+    }
+
+    .metric strong{
+      display:block;
+      font-size:20px;
+      color:#f3cc72;
+      line-height:1;
+    }
+
+    .metric span{
+      font-size:11px;
+      color:rgba(255,245,225,.68);
+      text-transform:uppercase;
+      font-weight:800;
+    }
+
+    .evidence-tags{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:14px;
+    }
+
+    .trust{
+      display:inline-flex;
+      align-items:center;
+      min-height:26px;
+      border-radius:4px;
+      padding:5px 8px;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .trust.v{color:#113820;background:rgba(72,183,123,.25);border:1px solid rgba(72,183,123,.75)}
+    .trust.p{color:#4b3106;background:rgba(217,162,69,.28);border:1px solid rgba(217,162,69,.8)}
+    .trust.i{color:#3e3a34;background:rgba(132,128,122,.22);border:1px dashed rgba(70,65,55,.65)}
+
+    .folder-view{
+      display:grid;
+      grid-template-columns:minmax(320px, .9fr) minmax(340px,1.1fr);
+      gap:24px;
+      align-items:center;
+      min-height:600px;
+    }
+
+    .envelope{
+      position:relative;
+      width:min(520px,100%);
+      min-height:430px;
+      margin:auto;
+      perspective:1200px;
+    }
+
+    .folder-body{
+      position:absolute;
+      left:5%;
+      right:5%;
+      bottom:24px;
+      height:260px;
+      border-radius:8px 8px 12px 12px;
+      background:linear-gradient(140deg,#b9874e,#7a5131);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .folder-body::before{
+      content:"";
+      position:absolute;
+      inset:auto 0 0;
+      height:72%;
+      background:linear-gradient(160deg,#c59a63,#8a5c37);
+      clip-path:polygon(0 22%,50% 0,100% 22%,100% 100%,0 100%);
+    }
+
+    .folder-lid{
+      position:absolute;
+      left:5%;
+      right:5%;
+      bottom:258px;
+      height:136px;
+      border-radius:12px 18px 4px 4px;
+      background:linear-gradient(160deg,#c69b62,#86603a);
+      transform-origin:bottom;
+      transform:rotateX(0deg);
+      transition:transform .75s cubic-bezier(.2,.8,.2,1);
+      box-shadow:0 -14px 34px rgba(0,0,0,.18);
+    }
+
+    .folder-lid::before{
+      content:"";
+      position:absolute;
+      left:24px;
+      top:-28px;
+      width:180px;
+      height:54px;
+      border-radius:10px 16px 0 0;
+      background:linear-gradient(160deg,#c9a16a,#94623a);
+    }
+
+    .folder-sheet{
+      position:absolute;
+      left:14%;
+      bottom:118px;
+      width:72%;
+      height:250px;
+      padding:22px;
+      border-radius:4px;
+      background:linear-gradient(160deg,#fff8e9,#d6c7a5);
+      box-shadow:0 16px 36px rgba(0,0,0,.28);
+      transform:translateY(70px) rotate(-2deg);
+      opacity:.55;
+      transition:transform .72s cubic-bezier(.2,.8,.2,1), opacity .4s ease;
+    }
+
+    .envelope.open .folder-lid{transform:rotateX(-58deg)}
+    .envelope.open .folder-sheet{transform:translateY(-38px) rotate(-2deg);opacity:1}
+
+    .open-folder{
+      position:absolute;
+      right:10px;
+      top:16px;
+      z-index:5;
+      border:0;
+      background:#172339;
+      color:#f5df9d;
+      border-radius:999px;
+      padding:10px 12px;
+      font-weight:900;
+      font-size:12px;
+      cursor:pointer;
+      box-shadow:0 12px 22px rgba(0,0,0,.26);
+    }
+
+    .doc-table{
+      display:grid;
+      gap:10px;
+    }
+
+    .doc-card{
+      display:grid;
+      grid-template-columns:104px 1fr;
+      gap:12px;
+      align-items:center;
+      background:rgba(255,248,231,.88);
+      border:1px solid rgba(61,45,26,.2);
+      border-radius:7px;
+      padding:12px;
+      box-shadow:0 10px 24px rgba(0,0,0,.14);
+    }
+
+    .source-code{
+      width:104px;
+      min-height:72px;
+      border-radius:4px;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      color:#f6e8c5;
+      background:linear-gradient(155deg,#1d2941,#0f121a);
+      font-weight:900;
+      font-size:12px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      border:1px solid rgba(255,255,255,.12);
+    }
+
+    .doc-card h3{
+      margin:0 0 4px;
+      font-size:15px;
+    }
+
+    .doc-card p{
+      margin:0;
+      color:#5b4b37;
+      font-size:13px;
+    }
+
+    .clipboard-view{
+      display:grid;
+      grid-template-columns:minmax(340px, .98fr) minmax(320px,1.02fr);
+      gap:28px;
+      align-items:center;
+      min-height:600px;
+    }
+
+    .clipboard{
+      position:relative;
+      width:min(480px,100%);
+      min-height:560px;
+      margin:auto;
+      padding:54px 26px 26px;
+      border-radius:18px;
+      background:linear-gradient(160deg,#6d462b,#3d291e);
+      box-shadow:var(--shadow);
+    }
+
+    .clip{
+      position:absolute;
+      top:18px;
+      left:50%;
+      width:150px;
+      height:50px;
+      transform:translateX(-50%);
+      border-radius:10px 10px 18px 18px;
+      background:linear-gradient(#8f989f,#4b525a);
+      box-shadow:inset 0 4px 8px rgba(255,255,255,.18),0 8px 18px rgba(0,0,0,.22);
+    }
+
+    .page-book{
+      position:relative;
+      height:448px;
+      perspective:1300px;
+    }
+
+    .note-page{
+      position:absolute;
+      inset:0;
+      padding:28px 26px;
+      border-radius:6px;
+      background:
+        repeating-linear-gradient(#fbf4dc 0 28px,#d8cda8 29px 30px),
+        linear-gradient(#fbf4dc,#efe0b8);
+      border:1px solid rgba(58,45,28,.28);
+      box-shadow:0 12px 30px rgba(0,0,0,.2);
+      transform-origin:left center;
+      transition:transform .72s cubic-bezier(.2,.8,.2,1), opacity .4s ease;
+      overflow:hidden;
+    }
+
+    .note-page::before{
+      content:"";
+      position:absolute;
+      top:0;
+      bottom:0;
+      left:42px;
+      width:2px;
+      background:rgba(176,42,42,.38);
+    }
+
+    .note-page:not(.current){
+      transform:rotateY(-116deg) translateX(-12px);
+      opacity:0;
+      pointer-events:none;
+    }
+
+    .note-page.turning{
+      animation:pageThrow .72s cubic-bezier(.2,.8,.2,1);
+    }
+
+    @keyframes pageThrow{
+      0%{transform:rotateY(0)}
+      55%{transform:rotateY(-78deg) translateX(-18px)}
+      100%{transform:rotateY(-116deg) translateX(-12px);opacity:0}
+    }
+
+    .pager{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      margin-top:16px;
+    }
+
+    .pager button,.deck-action{
+      border:1px solid rgba(255,255,255,.22);
+      color:#f2e2bc;
+      background:#161a22;
+      border-radius:6px;
+      padding:10px 12px;
+      font-weight:900;
+      cursor:pointer;
+    }
+
+    .analysis-card{
+      background:linear-gradient(160deg,#f5e7c3,#c9a968);
+      border-radius:8px;
+      padding:18px;
+      box-shadow:0 18px 38px rgba(0,0,0,.24);
+    }
+
+    .link-board{
+      display:grid;
+      grid-template-columns:minmax(330px,1fr) minmax(330px,1fr);
+      gap:24px;
+      min-height:600px;
+      align-items:center;
+    }
+
+    .cork{
+      position:relative;
+      min-height:560px;
+      border:12px solid #5b3823;
+      border-radius:10px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.08), transparent 18rem),
+        repeating-linear-gradient(45deg,#9b7244 0 12px,#916a40 12px 24px);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .pin{
+      position:absolute;
+      width:14px;
+      height:14px;
+      border-radius:50%;
+      background:#c42d27;
+      box-shadow:0 4px 8px rgba(0,0,0,.24), inset 0 2px 2px rgba(255,255,255,.34);
+      z-index:3;
+    }
+
+    .thread{
+      position:absolute;
+      height:2px;
+      background:rgba(23,31,45,.62);
+      transform-origin:left center;
+      box-shadow:0 0 5px rgba(0,0,0,.18);
+    }
+
+    .node{
+      position:absolute;
+      min-width:150px;
+      max-width:205px;
+      padding:12px;
+      border-radius:4px;
+      color:#162033;
+      background:#fff6dc;
+      border:1px solid rgba(45,34,22,.22);
+      box-shadow:0 14px 28px rgba(0,0,0,.22);
+      font-size:12px;
+      font-weight:800;
+      transform:rotate(var(--r));
+    }
+
+    .node small{
+      display:block;
+      color:#725a3a;
+      font-size:10px;
+      text-transform:uppercase;
+      margin-bottom:4px;
+      letter-spacing:.08em;
+    }
+
+    .node.main{left:35%;top:36%;--r:-1deg;background:#f8e2aa}
+    .node.n1{left:8%;top:10%;--r:-4deg}
+    .node.n2{right:8%;top:12%;--r:3deg}
+    .node.n3{left:10%;bottom:15%;--r:2deg}
+    .node.n4{right:7%;bottom:12%;--r:-3deg}
+    .pin.p1{left:41%;top:38%}.pin.p2{left:15%;top:12%}.pin.p3{right:15%;top:14%}.pin.p4{left:18%;bottom:18%}.pin.p5{right:14%;bottom:16%}
+    .thread.t1{left:19%;top:17%;width:250px;transform:rotate(28deg)}
+    .thread.t2{left:47%;top:40%;width:255px;transform:rotate(-28deg)}
+    .thread.t3{left:20%;bottom:22%;width:248px;transform:rotate(-25deg)}
+    .thread.t4{left:48%;top:43%;width:255px;transform:rotate(32deg)}
+
+    .recorder-view{
+      display:grid;
+      grid-template-columns:minmax(330px,1fr) minmax(340px,1fr);
+      gap:24px;
+      align-items:center;
+      min-height:600px;
+    }
+
+    .recorder{
+      position:relative;
+      width:min(520px,100%);
+      min-height:520px;
+      margin:auto;
+      border-radius:16px;
+      background:linear-gradient(160deg,#191b20,#090a0d);
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:var(--shadow), inset 0 0 0 3px rgba(255,255,255,.025);
+      padding:26px;
+      overflow:hidden;
+    }
+
+    .speaker{
+      display:grid;
+      grid-template-columns:repeat(14,1fr);
+      gap:7px;
+      width:70%;
+      margin:8px 0 30px;
+    }
+
+    .speaker span{
+      aspect-ratio:1;
+      border-radius:50%;
+      background:#08090c;
+      box-shadow:inset 0 1px 2px rgba(255,255,255,.08);
+    }
+
+    .tape-window{
+      position:relative;
+      margin:auto;
+      width:82%;
+      height:190px;
+      border-radius:10px;
+      background:#d6d1c7;
+      border:8px solid #111217;
+      box-shadow:inset 0 0 20px rgba(0,0,0,.38);
+    }
+
+    .tape-window .reel{
+      top:42px;
+      width:88px;
+      height:88px;
+      border-color:#22252b;
+    }
+
+    .level{
+      display:flex;
+      gap:5px;
+      align-items:end;
+      height:70px;
+      margin-top:26px;
+    }
+
+    .bar{
+      width:12px;
+      border-radius:4px 4px 0 0;
+      background:linear-gradient(#f05b38,#d9a245);
+      animation:meter 1.2s ease-in-out infinite;
+      animation-delay:calc(var(--i) * .08s);
+    }
+
+    @keyframes meter{
+      0%,100%{height:18px}
+      45%{height:64px}
+    }
+
+    .transcript{
+      display:grid;
+      gap:12px;
+    }
+
+    .line{
+      background:linear-gradient(160deg,#fff4d6,#d5bd88);
+      border-left:5px solid #203c69;
+      border-radius:6px;
+      padding:13px 14px;
+      box-shadow:0 12px 26px rgba(0,0,0,.16);
+    }
+
+    .line strong{display:block;font-size:12px;text-transform:uppercase;color:#203c69;margin-bottom:4px}
+    .line p{margin:0;font-size:14px;color:#2f281f}
+
+    .audit-view{
+      display:grid;
+      grid-template-columns:minmax(340px,1fr) minmax(340px,1fr);
+      gap:24px;
+      min-height:600px;
+      align-items:center;
+    }
+
+    .justice-file{
+      position:relative;
+      min-height:560px;
+      margin:auto;
+      width:min(500px,100%);
+    }
+
+    .blue-folder{
+      position:absolute;
+      inset:70px 10px 30px 60px;
+      background:linear-gradient(145deg,#1d4c92,#112948);
+      border-radius:8px;
+      transform:rotate(5deg);
+      box-shadow:var(--shadow);
+    }
+
+    .brown-cover{
+      position:absolute;
+      inset:20px 42px 42px 18px;
+      padding:38px 34px;
+      background:linear-gradient(160deg,#b89964,#80613a);
+      border:1px solid rgba(68,48,25,.36);
+      box-shadow:0 26px 55px rgba(0,0,0,.34);
+      transform:rotate(-5deg);
+    }
+
+    .brown-cover::before{
+      content:"";
+      position:absolute;
+      inset:12px;
+      border:1px solid rgba(42,31,20,.28);
+    }
+
+    .cover-title{
+      text-align:center;
+      font-family:Georgia, "Times New Roman", serif;
+      font-weight:800;
+      font-size:24px;
+      line-height:1.35;
+      margin-top:40px;
+      color:#2c2115;
+    }
+
+    .stars{
+      text-align:center;
+      margin:24px 0;
+      letter-spacing:.18em;
+    }
+
+    .redaction{
+      display:inline-block;
+      height:13px;
+      width:170px;
+      background:#162033;
+      transform:rotate(-5deg);
+      box-shadow:0 0 0 2px rgba(255,255,255,.12);
+    }
+
+    .audit-list{
+      display:grid;
+      gap:14px;
+    }
+
+    .audit-item{
+      background:linear-gradient(160deg,#f4e5c0,#c49f65);
+      border-radius:8px;
+      padding:16px;
+      border:1px solid rgba(58,42,22,.2);
+      box-shadow:0 14px 26px rgba(0,0,0,.18);
+    }
+
+    .audit-item h3{
+      margin:0 0 6px;
+      font-size:15px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+
+    .audit-item p{margin:0;color:#493b28;font-size:14px}
+
+    .footer-note{
+      position:relative;
+      z-index:3;
+      margin-top:16px;
+      color:rgba(255,242,211,.68);
+      font-size:12px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    @media (max-width:900px){
+      .topbar,.board-grid,.folder-view,.clipboard-view,.link-board,.recorder-view,.audit-view{grid-template-columns:1fr;display:grid}
+      .topbar{display:grid}
+      .tabs{grid-template-columns:repeat(2,1fr)}
+      .desk{padding:12px}
+      .view{min-height:unset}
+      .stack,.folder-view,.clipboard-view,.link-board,.recorder-view,.audit-view{min-height:unset}
+      .paper.identity{position:relative;left:auto;top:auto;width:100%;min-height:auto;margin:38px auto 20px}
+      .case-folder{inset:40px 0 16px 0}
+      .cassette{margin-top:20px}
+    }
+
+    @media (max-width:560px){
+      .tabs{grid-template-columns:1fr}
+      .metric-row{grid-template-columns:1fr}
+      .identity-list li,.doc-card{grid-template-columns:1fr}
+      .node{position:relative;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;margin:12px;width:auto;max-width:none}
+      .pin,.thread{display:none}
+      .cork{padding:10px}
+      .footer-note{display:block}
+    }
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <header class="topbar">
+      <div class="brand">
+        <span class="case-tag">OSINT CASE FILE / CNPJ 08.247.122/0001-99</span>
+        <h1>Maxxcomp Investigation Board</h1>
+        <p class="case-meta">Dossie interativo com fatos verificados, inferencias marcadas e pendencias preservadas. Coleta publica em 15/06/2026.</p>
+      </div>
+      <div class="status-strip" aria-label="Status do caso">
+        <span class="chip ok dot">Empresa ativa</span>
+        <span class="chip dot">Matriz SP</span>
+        <span class="chip warn dot">CEIS pendente</span>
+      </div>
+    </header>
+
+    <section class="desk">
+      <nav class="tabs" aria-label="Visoes do dossie">
+        <button class="tab active" data-view="overview" type="button">Mesa</button>
+        <button class="tab" data-view="documents" type="button">Arquivo</button>
+        <button class="tab" data-view="clipboard" type="button">Prancheta</button>
+        <button class="tab" data-view="links" type="button">Conexoes</button>
+        <button class="tab" data-view="record" type="button">Gravador</button>
+        <button class="tab" data-view="audit" type="button">Auditoria</button>
+      </nav>
+
+      <section class="view active" id="overview">
+        <div class="board-grid">
+          <div class="stack" aria-label="Mesa com documentos do caso">
+            <div class="case-folder"></div>
+            <article class="paper identity">
+              <div class="stamp">Verificado</div>
+              <h2>Ficha de Identidade</h2>
+              <p>MAXXCOMP GESTAO DE SERVICOS LTDA aparece de forma consistente em duas bases publicas de CNPJ e no proprio site corporativo.</p>
+              <ul class="identity-list">
+                <li><span>CNPJ</span><strong>08.247.122/0001-99</strong></li>
+                <li><span>Status</span><strong>Ativa / Matriz</strong></li>
+                <li><span>Inicio</span><strong>18/07/2006</strong></li>
+                <li><span>Endereco</span><strong>Rua Coronel Carlos Oliva, 280 / Tatuape / Sao Paulo-SP</strong></li>
+                <li><span>CNAE</span><strong>8020-0/01 / Monitoramento de sistemas de seguranca eletronico</strong></li>
+                <li><span>Capital</span><strong>R$ 300.000,00</strong></li>
+                <li><span>Socio</span><strong>AILTON ALESSANDRO SILVERIO / entrada em 20/12/2022</strong></li>
+              </ul>
+            </article>
+          </div>
+          <aside class="side-panel">
+            <div class="cassette" aria-label="Fita do caso">
+              <div class="cassette-title">CASE<br>PROFILE</div>
+              <div class="reel left"></div>
+              <div class="reel right"></div>
+            </div>
+            <article class="panel dark">
+              <h2>Leitura Executiva</h2>
+              <p>O alvo tem cadastro ativo, presenca digital propria e posicionamento B2B coerente com seguranca e facilities. A checagem de sancoes publicas segue aberta por falha tecnica na API do Portal da Transparencia.</p>
+              <div class="metric-row">
+                <div class="metric"><strong>13</strong><span>fatos rastreados</span></div>
+                <div class="metric"><strong>2</strong><span>inferencias</span></div>
+                <div class="metric"><strong>2</strong><span>pendencias</span></div>
+              </div>
+              <div class="evidence-tags">
+                <span class="trust v">Verificado</span>
+                <span class="trust p">Provavel</span>
+                <span class="trust i">Incerto</span>
+              </div>
+            </article>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" id="documents">
+        <div class="folder-view">
+          <div class="envelope" id="envelope">
+            <button class="open-folder" type="button" id="openFolder">Abrir pasta</button>
+            <div class="folder-sheet">
+              <h2>Documentos-Chave</h2>
+              <p>Cadastro publico, site corporativo, sitemaps e tentativa CEIS/CNEP compoem o nucleo documental da analise.</p>
+              <div class="evidence-tags">
+                <span class="trust v">Fontes abertas</span>
+                <span class="trust p">Cruzamento</span>
+              </div>
+            </div>
+            <div class="folder-lid"></div>
+            <div class="folder-body"></div>
+          </div>
+          <div class="doc-table">
+            <article class="doc-card">
+              <div class="source-code">BrasilAPI</div>
+              <div>
+                <h3>Cadastro CNPJ</h3>
+                <p>Razao social, situacao ativa, CNAE, capital social, regime tributario e QSA.</p>
+              </div>
+            </article>
+            <article class="doc-card">
+              <div class="source-code">CNPJ.ws</div>
+              <div>
+                <h3>Cadastro + IE</h3>
+                <p>Endereco, email cadastral, socio, inscricoes estaduais e timestamp de atualizacao.</p>
+              </div>
+            </article>
+            <article class="doc-card">
+              <div class="source-code">Site</div>
+              <div>
+                <h3>Presenca Propria</h3>
+                <p>Dominio ativo, CNPJ no rodape, canais sociais e oferta de servicos declarada.</p>
+              </div>
+            </article>
+            <article class="doc-card">
+              <div class="source-code">Portal</div>
+              <div>
+                <h3>Sancoes</h3>
+                <p>CEIS/CNEP nao concluido nesta rodada; permanece pendencia, sem virar "nada consta".</p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="clipboard">
+        <div class="clipboard-view">
+          <div class="clipboard">
+            <div class="clip"></div>
+            <div class="page-book" id="pageBook">
+              <article class="note-page current">
+                <h2>Pagina 1 / Identidade</h2>
+                <p><strong>Razao social:</strong> MAXXCOMP GESTAO DE SERVICOS LTDA.</p>
+                <p><strong>Nome fantasia:</strong> MAXXCOMP GESTAO.</p>
+                <p><strong>Natureza:</strong> Sociedade Empresaria Limitada.</p>
+                <p><strong>Porte:</strong> Demais.</p>
+              </article>
+              <article class="note-page">
+                <h2>Pagina 2 / Operacao</h2>
+                <p><strong>CNAE principal:</strong> monitoramento de sistemas de seguranca eletronico.</p>
+                <p><strong>Servicos declarados:</strong> facilities, seguranca patrimonial, portaria remota, limpeza, copa, zeladoria, tecnologia.</p>
+              </article>
+              <article class="note-page">
+                <h2>Pagina 3 / Pontos Frageis</h2>
+                <p><strong>CEIS/CNEP:</strong> consulta tecnica nao concluida.</p>
+                <p><strong>Data:</strong> site declara 18/07/2010; cadastro publico indica 18/07/2006.</p>
+              </article>
+            </div>
+            <div class="pager">
+              <button type="button" id="prevPage">Anterior</button>
+              <button type="button" id="nextPage">Proxima</button>
+            </div>
+          </div>
+          <article class="analysis-card">
+            <h2>Notas de Analise</h2>
+            <p>A prancheta concentra as conclusoes operacionais. A pagina virada sai do foco para deixar visivel que o dossie tem camadas: identidade, operacao e fragilidades.</p>
+            <ul>
+              <li>O cadastro publico e o site proprio convergem no CNPJ e endereco.</li>
+              <li>O escopo de servicos do site e coerente com o CNAE principal e secundarios.</li>
+              <li>A ausencia de CEIS/CNEP conclusivo e uma lacuna, nao uma absolvicao.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="links">
+        <div class="link-board">
+          <div class="cork" aria-label="Quadro de conexoes">
+            <div class="thread t1"></div><div class="thread t2"></div><div class="thread t3"></div><div class="thread t4"></div>
+            <span class="pin p1"></span><span class="pin p2"></span><span class="pin p3"></span><span class="pin p4"></span><span class="pin p5"></span>
+            <article class="node main"><small>Alvo</small>MAXXCOMP GESTAO DE SERVICOS LTDA</article>
+            <article class="node n1"><small>Cadastro</small>CNPJ 08.247.122/0001-99 / ativa</article>
+            <article class="node n2"><small>Societario</small>Ailton Alessandro Silverio / socio-administrador</article>
+            <article class="node n3"><small>Endereco</small>Rua Coronel Carlos Oliva, 280 / Tatuape</article>
+            <article class="node n4"><small>Digital</small>maxxcompservicos.com.br / canais sociais</article>
+          </div>
+          <article class="panel">
+            <h2>Mapa de Vinculos</h2>
+            <p>As conexoes solidas ficam presas ao centro por fonte cadastral ou declaracao do site. O dominio e tratado como vinculo provavel forte porque aparece no email cadastral e o rodape confirma o CNPJ.</p>
+            <div class="evidence-tags">
+              <span class="trust v">CNPJ -> empresa</span>
+              <span class="trust v">empresa -> socio</span>
+              <span class="trust p">empresa -> dominio</span>
+              <span class="trust i">CEIS pendente</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="record">
+        <div class="recorder-view">
+          <div class="recorder" aria-label="Gravador animado do caso">
+            <div class="speaker" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="tape-window">
+              <div class="reel left"></div>
+              <div class="reel right"></div>
+            </div>
+            <div class="level">
+              <span class="bar" style="--i:1"></span><span class="bar" style="--i:2"></span><span class="bar" style="--i:3"></span>
+              <span class="bar" style="--i:4"></span><span class="bar" style="--i:5"></span><span class="bar" style="--i:6"></span>
+              <span class="bar" style="--i:7"></span><span class="bar" style="--i:8"></span><span class="bar" style="--i:9"></span>
+              <span class="bar" style="--i:10"></span><span class="bar" style="--i:11"></span><span class="bar" style="--i:12"></span>
+            </div>
+          </div>
+          <div class="transcript">
+            <article class="line">
+              <strong>Registro 01 / Cadastro</strong>
+              <p>Duas bases publicas confirmam a identidade principal do CNPJ e a situacao ativa.</p>
+            </article>
+            <article class="line">
+              <strong>Registro 02 / Presenca digital</strong>
+              <p>Site proprio responde em HTTP/HTTPS, declara CNPJ no rodape e lista canais sociais.</p>
+            </article>
+            <article class="line">
+              <strong>Registro 03 / Dissonancia</strong>
+              <p>Data de fundacao autodeclarada no schema do site diverge da data oficial de inicio da atividade.</p>
+            </article>
+            <article class="line">
+              <strong>Registro 04 / Lacuna</strong>
+              <p>CEIS/CNEP precisa ser reconsultado por rota oficial estavel ou interface web do Portal da Transparencia.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="audit">
+        <div class="audit-view">
+          <div class="justice-file">
+            <div class="blue-folder"></div>
+            <div class="brown-cover">
+              <div class="cover-title">CASE FILE<br>OSINT<br>MAXXCOMP</div>
+              <div class="stars">*****</div>
+              <p><span class="redaction"></span></p>
+              <p style="margin-top:24px;line-height:1.8;font-family:Georgia,serif;">Fatos com fonte localizavel mantidos no topo. Inferencias e lacunas preservadas como risco analitico.</p>
+            </div>
+          </div>
+          <div class="audit-list">
+            <article class="audit-item">
+              <h3>Fonte real</h3>
+              <p>BrasilAPI, CNPJ.ws, site corporativo e sitemaps foram tratados como fontes localizaveis.</p>
+            </article>
+            <article class="audit-item">
+              <h3>Inferencia controlada</h3>
+              <p>Dominio corporativo e posicionamento B2B foram classificados como provaveis quando dependem de cruzamento.</p>
+            </article>
+            <article class="audit-item">
+              <h3>Ponto atacavel</h3>
+              <p>CEIS/CNEP nao pode aparecer como "nada consta". O relatorio marca pendencia tecnica.</p>
+            </article>
+            <article class="audit-item">
+              <h3>Divergencia</h3>
+              <p>Cadastro publico indica 2006; schema do site indica 2010. Precisa de confirmacao documental.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <footer class="footer-note">
+      <span>Fontes: BrasilAPI, CNPJ.ws, maxxcompservicos.com.br e sitemaps publicos.</span>
+      <span>Fluxo: coleta publica / julgamento / entrega visual.</span>
+    </footer>
+  </main>
+
+  <script>
+    const tabs = Array.from(document.querySelectorAll(".tab"));
+    const views = Array.from(document.querySelectorAll(".view"));
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const target = tab.dataset.view;
+        tabs.forEach((item) => item.classList.toggle("active", item === tab));
+        views.forEach((view) => {
+          const active = view.id === target;
+          view.classList.toggle("active", active);
+          if(active){
+            view.style.animation = "none";
+            void view.offsetHeight;
+            view.style.animation = "";
+          }
+        });
+        if(target === "documents"){
+          setTimeout(() => document.getElementById("envelope").classList.add("open"), 180);
+        }
+      });
+    });
+
+    const envelope = document.getElementById("envelope");
+    document.getElementById("openFolder").addEventListener("click", () => {
+      envelope.classList.toggle("open");
+    });
+
+    const pages = Array.from(document.querySelectorAll(".note-page"));
+    let currentPage = 0;
+
+    function showPage(next){
+      if(next === currentPage) return;
+      const old = pages[currentPage];
+      const fresh = pages[next];
+      old.classList.add("turning");
+      old.classList.remove("current");
+      fresh.classList.add("current");
+      setTimeout(() => old.classList.remove("turning"), 740);
+      currentPage = next;
+    }
+
+    document.getElementById("nextPage").addEventListener("click", () => {
+      showPage((currentPage + 1) % pages.length);
+    });
+
+    document.getElementById("prevPage").addEventListener("click", () => {
+      showPage((currentPage - 1 + pages.length) % pages.length);
+    });
+  </script>
+</body>
+</html>
